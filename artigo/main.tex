@@ -1,0 +1,52 @@
+\documentclass[12pt]{article}
+
+\usepackage{sbc-template}
+\usepackage{graphicx,url}
+\usepackage[brazil]{babel} 
+\usepackage[utf8]{inputenc}
+\usepackage{float}
+\usepackage{tikz}
+
+\sloppy
+
+\title{Título}
+
+\author{Lucas Victor Dos Santos Gomes\inst{1}, Felipe Mendes Soares Silva\inst{1},\\ Pedro Tobias Souza Guerra\inst{1}, Ricardo Martins da Silva\inst{1}}
+
+\address{Universidade Federal do Agreste de Pernambuco (UFAPE)\\
+  Garanhuns -- PE -- Brazil \\ 
+  \email{lucas.vsgomes@ufape.edu.br, felipe.mendess@ufape.edu.br} \\[-16pt]
+  \email{pedro.tsguerra@ufape.edu.br, ricardo.msilva4@ufape.edu.br}
+}
+
+\begin{document} 
+
+\maketitle
+
+\begin{abstract}
+    Texto para o resumo em inglês.
+\end{abstract}
+
+\begin{resumo} 
+    Texto para o resumo,
+\end{resumo}
+
+% --- INCLUSÃO DOS CAPÍTULOS ---
+
+\input{chapters/01_introducao.tex}
+\input{chapters/02_relacionados.tex}
+\input{chapters/03_metodologia.tex}
+\input{chapters/04_resultados}
+\input{chapters/05_analises}
+\input{chapters/06_conclusao}
+
+% 
+% Para adicionar novos capítulos, basta criar o arquivo em /chapters
+% e adicionar a linha \input{} aqui
+
+
+% --- BIBLIOGRAFIA ---
+\bibliographystyle{sbc}
+\bibliography{referencias} 
+
+\end{document}
