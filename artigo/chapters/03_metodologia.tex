@@ -2,4 +2,87 @@
 \section{Metodologia}
 \label{sec:metodologia}
 
-Texto para Metodologia.
+Nesta seção, descrevemos como os experimentos foram estruturados: quais bases de dados foram utilizadas, como os dados foram preparados, que features compõem o modelo, e como o protocolo de avaliação foi organizado.
+
+\subsection{Bases de Dados}
+
+Trabalhamos com dez bases de dados de transações financeiras, cedidas no âmbito deste projeto como dados públicos. Elas estão divididas em duas séries:
+
+\begin{itemize}
+    \item \textbf{Série PD}: bases \texttt{pd\_v0}, \texttt{pd\_v0.25}, \texttt{pd\_v0.5}, \texttt{pd\_v0.75} e \texttt{pd\_v1}.
+    \item \textbf{Série GS}: bases \texttt{gs\_v0}, \texttt{gs\_v0.25}, \texttt{gs\_v0.5}, \texttt{gs\_v0.75} e \texttt{gs\_v1}.
+\end{itemize}
+
+O sufixo de cada base indica seu \textbf{nível de viés controlado} ($v$), que varia entre 0,0 (sem viés introduzido) e 1,0 (viés máximo). Essa estrutura nos permite estudar, de forma sistemática, o efeito do viés histórico tanto no treinamento quanto na avaliação dos modelos.
+
+O atributo sensível do estudo é o ramo de atividade do estabelecimento comercial (\texttt{RAMO\_ATIVIDADE\_1}). Para manter o problema binário e tratável, filtramos apenas dois grupos: o \textbf{grupo privilegiado} (código 4, recodificado para 0) e o \textbf{grupo desprivilegiado} (código 1).
+
+\subsection{Pré-processamento e Engenharia de Features}
+
+Depois de filtrar os grupos, aplicamos uma série de transformações para enriquecer os dados com informações de comportamento transacional:
+
+\begin{itemize}
+    \item \textbf{Atributos temporais:} extraímos da data de lançamento (\texttt{DATA\_LANCAMENTO}) o dia da semana (\texttt{dia\_da\_semana}) e criamos um indicador binário de final de semana (\texttt{final\_de\_semana}). Esses atributos capturam padrões de comportamento que tendem a ser diferentes entre dias úteis e fins de semana.
+
+    \item \textbf{Comportamento diário por cliente:} para cada combinação de titular e data, calculamos o valor total transacionado no dia (\texttt{valor\_total\_dia}), a quantidade de transações realizadas (\texttt{n\_transacoes\_dia}) e o valor médio por transação (\texttt{valor\_medio\_dia}). A ideia é capturar anomalias no ritmo de uso --- um cliente que normalmente faz uma ou duas compras por dia e de repente realiza dez pode estar tendo sua conta comprometida.
+
+    \item \textbf{Proporção do saldo comprometido:} calculamos a razão entre o valor da transação e o saldo disponível (\texttt{pct\_saldo\_gasto}), o que ajuda o modelo a identificar transações que comprometem uma fatia desproporcional do saldo do cliente.
+\end{itemize}
+
+Antes do treinamento, todas as features são normalizadas pelo \textit{MinMaxScaler}, e valores ausentes são substituídos por zero.
+
+\begin{comment}
+% Adicionar essa parte caso seja respondida a pergunta 2.
+\subsection{Técnica de Mitigação de Viés: Prejudice Remover}
+
+Para investigar a PQ2, utilizamos o \textbf{Prejudice Remover} \cite{kamishima2012fairness}, uma técnica de mitigação \textit{in-processing} que modifica a própria função de perda durante o treinamento. Em vez de treinar um classificador puramente orientado a acurácia, o Prejudice Remover adiciona uma penalidade que desencoraja o modelo de usar o atributo sensível --- mesmo que de forma implícita, através de correlações com outras variáveis.
+
+Formalmente, a função objetivo fica:
+
+\[
+\mathcal{L}_{PR} = \mathcal{L}_{CE} + \eta \cdot \mathcal{R}_{PR}
+\]
+
+onde $\mathcal{L}_{CE}$ é a perda de entropia cruzada padrão, $\mathcal{R}_{PR}$ é o termo que penaliza a dependência entre as predições e o atributo sensível, e $\eta \geq 0$ é o \textbf{parâmetro de penalidade de equidade}. Quando $\eta = 0$, o modelo se comporta como uma Regressão Logística comum, sem nenhuma preocupação com fairness. À medida que $\eta$ cresce, a pressão por equidade aumenta --- mas isso pode vir a custo de parte do desempenho preditivo.
+
+Testamos oito valores de $\eta$:
+\[
+\eta \in \{0{,}0;\; 1{,}0;\; 5{,}0;\; 10{,}0;\; 25{,}0;\; 50{,}0;\; 75{,}0;\; 100{,}0\}
+\]
+
+Quando, por algum motivo, o Prejudice Remover não consegue convergir ou os dados não permitem seu treinamento adequado (por exemplo, quando um dos grupos do atributo sensível tem poucas amostras), utilizamos uma Regressão Logística convencional como \textit{fallback}, aplicada apenas sobre as features não sensíveis.
+\end{comment}
+
+\subsection{Protocolo Experimental}
+
+\subsubsection{Balanceamento de classes}
+
+Como é comum em detecção de fraudes, as bases apresentam desbalanceamento entre as classes (transações legítimas são muito mais frequentes do que fraudes). Para evitar que o modelo simplesmente aprenda a ignorar a classe minoritária, aplicamos subamostragem (\textit{undersampling}), equilibrando as classes no conjunto de treinamento. O tamanho máximo do conjunto de treinamento é de 10.000 instâncias, com 5.000 por classe.
+
+\subsubsection{Validação cruzada entre bases}
+
+Para maximizar o aprendizado a partir das dez bases disponíveis, adotamos um esquema de \textbf{validação cruzada entre bases}: cada base serve como conjunto de treinamento uma vez, e o modelo resultante é avaliado em todas as demais. Isso nos permite observar não só o comportamento do modelo em dados similares ao treinamento, mas também como ele generaliza para bases com diferentes níveis de viés --- algo especialmente relevante para as perguntas de pesquisa. O conjunto de teste é limitado a 20.000 instâncias por base.
+
+\subsubsection{Métricas de avaliação}
+
+Avaliamos os modelos sob duas perspectivas. Do ponto de vista de desempenho preditivo:
+
+\begin{itemize}
+    \item \textbf{F1-Score}: média harmônica entre precisão e revocação, especialmente adequada para dados desbalanceados;
+    \item \textbf{Precisão}: proporção de alertas de fraude que eram, de fato, fraudes;
+    \item \textbf{Revocação}: proporção de fraudes reais que foram corretamente identificadas.
+\end{itemize}
+
+Do ponto de vista de equidade, considerando a aprovação da transação (classe 0) como o resultado favorável:
+
+\begin{itemize}
+    \item \textbf{SPD} (\textit{Statistical Parity Difference}): diferença entre a taxa de aprovação do grupo privilegiado e a do grupo desprivilegiado. Valores próximos de zero indicam maior equidade:
+    \[
+    \text{SPD} = P(\hat{Y} = 0\mid S = 0) - P(\hat{Y} = 0\mid S = 1)
+    \]
+
+    \item \textbf{DI} (\textit{Disparate Impact}): razão entre as taxas de aprovação dos dois grupos. Um valor abaixo de 0,8 é considerado problemático pelo critério dos ``quatro quintos'':
+    \[
+    \text{DI} = \frac{P(\hat{Y} = 0\mid S = 1)}{P(\hat{Y} = 0\mid S = 0)}
+    \]
+\end{itemize}
