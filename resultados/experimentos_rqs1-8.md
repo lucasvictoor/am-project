@@ -1,8 +1,8 @@
 # Registro de Experimentos — RQs 1–8
 
-**Data de execução:** 2026-03-11
-**Tempo total:** ~198 segundos
-**Protocolo:** Validação cruzada entre bases — treina em cada uma das 10 bases, testa nas outras 9 (90 pares por condição experimental)
+- **Data de execução:** 11/03/2026
+- **Tempo total:** ~198 segundos
+- **Protocolo:** Validação cruzada entre bases — treina em cada uma das 10 bases, testa nas outras 9 (90 pares por condição experimental)
 
 ---
 
@@ -27,7 +27,7 @@ O estudo investiga como características da base de dados e estratégias de mode
 ### Métricas utilizadas
 
 **Desempenho preditivo**
-- **F1-Score** — equilíbrio entre precisão e revocação; métrica principal de performance
+- **F1-Score** — equilíbrio entre precision e recall; métrica principal de performance
 - **Precision** — fração das predições positivas que são corretas
 - **Recall** — fração das fraudes reais que o modelo detecta
 
