@@ -2,54 +2,46 @@
 
 \usepackage{sbc-template}
 \usepackage{graphicx,url}
-\usepackage[brazil]{babel} 
+\usepackage[brazilian]{babel}
 \usepackage[utf8]{inputenc}
 \usepackage{float}
-\usepackage{tikz}
 \usepackage{amsmath}
-\usepackage{comment}
+\usepackage{booktabs}
+\usepackage[hidelinks]{hyperref}
+
+\newcommand{\citeonline}[1]{\cite{#1}}
 
 \sloppy
 
-\title{Equidade em Modelos de Aprendizado de Máquina para Detecção de Fraudes: Análise do Impacto do Viés nos Dados e da Técnica Prejudice Remover}
+\title{Equidade na Detecção de Fraudes Financeiras:\\ Impacto do Viés e Mitigação}
 
-\author{Lucas Victor Dos Santos Gomes\inst{1}, Felipe Mendes Soares Silva\inst{1},\\ Pedro Tobias Souza Guerra\inst{1}, Ricardo Martins da Silva\inst{1}}
+\author{Lucas Victor Dos Santos Gomes\inst{1}, Felipe Mendes Soares Silva\inst{1},\\
+        Pedro Tobias Souza Guerra\inst{1}, Ricardo Martins da Silva\inst{1}}
 
 \address{Universidade Federal do Agreste de Pernambuco (UFAPE)\\
-  Garanhuns -- PE -- Brazil \\ 
-  \email{lucas.vsgomes@ufape.edu.br, felipe.mendess@ufape.edu.br} \\[-16pt]
-  \email{pedro.tsguerra@ufape.edu.br, ricardo.msilva4@ufape.edu.br}
+  Garanhuns -- PE -- Brazil\\[1ex]
+  {\ttfamily \{lucas.vsgomes, felipe.mendess\}@ufape.edu.br}\\
+  {\ttfamily \{pedro.tsguerra, ricardo.msilva4\}@ufape.edu.br}
 }
 
-\begin{document} 
+\begin{document}
 
 \maketitle
 
 \begin{abstract}
-    When a machine learning model judges a financial transaction to be fraudulent, it must not only be accurate, but also fair. A submitted model may flag transactions from certain business sectors as suspicious much more frequently than others, systematically harming specific customer groups. This work investigates how bias affects our data and the choices made during model development impacted its performance in the context of fraud detection. To this end, we used ten complete databases of financial transactions, organized into two series, PD and GS, in which the degree of bias in relation to the sensitive attribute (business sector of the establishment) is varied in a controlled manner between 0.0 and 1.0.
+When a machine learning model judges whether a financial transaction is fraudulent, accuracy alone is insufficient: the model must also be fair. A biased model may flag transactions from certain business sectors as suspicious far more often than others, systematically harming specific customer groups. This work investigates how bias in training data and modeling choices affect the fairness of fraud detection models. Ten financial transaction datasets organized in two series (PD and GS) were used, in which the degree of bias relative to the sensitive attribute (business sector) is varied in a controlled manner from 0.0 to 1.0. Fairness is evaluated by the SPD and DI metrics; predictive performance is measured by F1-Score. Results show that bias is structural and resistant to the tested techniques: no method reached the DI~$\geq$~0.8 threshold on average, and increasing training volume marginally amplified bias rather than correcting it. The Prejudice Remover was the only technique capable of perceptibly reducing SPD, though at the cost of a significant drop in F1-Score.
 \end{abstract}
 
 \begin{resumo}
-    Quando um modelo de aprendizado de máquina julga se uma transação financeira é fraudulenta, não basta ser preciso é preciso também ser justo. Um modelo enviesado pode marcar transações de certos ramos de atividade como suspeitas com muito mais frequência do que de outros, prejudicando sistematicamente determinados grupos de clientes. Este trabalho investiga de que forma o viés presente nos dados e as escolhas feitas durante o desenvolvimento do modelo afetam sua equidade no contexto de detecção de fraudes. Para isso, utilizamos dez bases de dados completas de transações financeiras, organizadas em duas séries PD e GS nas quais o grau de viés em relação ao atributo sensível (ramo de atividade do estabelecimento) é variado de forma controlada entre 0,0 e 1,0.
-    
-    % (Decidir qual pergunta vai ser responidida) Duas perguntas norteiam o estudo: primeiro, de que forma o conjunto de features escolhido influencia a equidade do modelo, e como isso muda conforme o viés nos dados varia? Segundo, como o parâmetro $\eta$ do Prejudice Remover pode ser ajustado para equilibrar justiça e desempenho preditivo à medida que o viés muda? A equidade é avaliada pelas métricas SPD e DI, enquanto o desempenho é medido pelo F1-Score. Os resultados (a complementar)...
-    
+Quando um modelo de aprendizado de máquina julga se uma transação financeira é fraudulenta, a precisão por si só é insuficiente: o modelo também deve ser justo. Um modelo enviesado pode sinalizar transações de determinados setores comerciais como suspeitas com muito mais frequência do que outros, prejudicando sistematicamente grupos específicos de clientes. Este trabalho investiga como o viés nos dados de treinamento e as escolhas de modelagem afetam a equidade de modelos de detecção de fraudes em transações financeiras. Dez bases organizadas em duas séries (PD e GS) foram utilizadas, com grau de viés controlado entre 0.0 e 1.0 em relação ao atributo sensível ramo de atividade. A equidade é medida pelas métricas SPD e DI; o desempenho preditivo, pelo F1-Score. Os resultados mostram que o viés é estrutural e resistente às técnicas testadas: nenhum método atingiu DI~$\geq$~0.8 em média, e o aumento do volume de dados acentuou marginalmente o viés em vez de corrigi-lo. O Prejudice Remover foi a única técnica capaz de reduzir o SPD de forma perceptível, ao custo de queda expressiva no F1-Score.
 \end{resumo}
-
-% --- INCLUSÃO DOS CAPÍTULOS ---
 
 \input{chapters/01_introducao.tex}
 \input{chapters/02_metodologia.tex}
 \input{chapters/03_experimentos.tex}
 \input{chapters/04_resultados.tex}
 
-% 
-% Para adicionar novos capítulos, basta criar o arquivo em /chapters
-% e adicionar a linha \input{} aqui
-
-
-% --- BIBLIOGRAFIA ---
-\bibliographystyle{unsrt}
-\bibliography{referencias} 
+\bibliographystyle{sbc}
+\bibliography{referencias}
 
 \end{document}

@@ -1,46 +1,25 @@
-% chapters/03_experimentos.tex
 \section{Experimentos}
 \label{sec:experimentos}
 
 O projeto está organizado em três experimentos complementares, executados a partir de dois scripts principais: \texttt{treino.py} e \texttt{experimentos.py}.
 
-\subsection{Experimento 1 — Análise do Prejudice Remover}
+\subsection{Experimento 1 -- Análise do Prejudice Remover}
 
-Este experimento investiga o impacto do parâmetro $\eta$ do Prejudice Remover sobre a equidade e o desempenho preditivo, treinando modelos com o conjunto completo de dez features. O \textbf{Prejudice Remover} \cite{kamishima2012fairness} é uma técnica de mitigação \textit{in-processing} que adiciona um termo de regularização à função de perda da Regressão Logística, penalizando a dependência entre as predições e o atributo sensível:
-
+Este experimento investiga o impacto do parâmetro $\eta$ do Prejudice Remover sobre a equidade e o desempenho preditivo, treinando modelos com o conjunto completo de dez features. O \textbf{Prejudice Remover}~\cite{kamishima2012fairness} é uma técnica de mitigação \textit{in-processing} que adiciona um termo de regularização à função de perda da Regressão Logística, penalizando a dependência entre as predições e o atributo sensível:
 \[
-\mathcal{L}_{PR} = \mathcal{L}_{CE} + \eta \cdot \mathcal{R}_{PR}
+\mathcal{L}_{\text{PR}} = \mathcal{L}_{\text{CE}} + \eta \cdot \mathcal{R}_{\text{PR}},
 \]
-
-onde $\mathcal{L}_{CE}$ é a perda de entropia cruzada e $\mathcal{R}_{PR}$ penaliza a dependência mútua entre predições e grupo sensível. Quando $\eta = 0$, o modelo se comporta como uma Regressão Logística sem nenhuma consideração de equidade; à medida que $\eta$ cresce, a penalidade por desigualdade aumenta, podendo impactar o desempenho preditivo.
-
-Foram testados oito valores de $\eta$:
+onde $\mathcal{L}_{\text{CE}}$ é a perda de entropia cruzada e $\mathcal{R}_{\text{PR}}$ penaliza a dependência mútua entre predições e grupo sensível. Quando $\eta = 0$, o modelo se comporta como uma Regressão Logística sem nenhuma consideração de equidade; à medida que $\eta$ cresce, a penalidade por desigualdade aumenta, podendo impactar o desempenho preditivo. Foram testados oito valores de $\eta$:
 \[
-\eta \in \{0{,}0;\; 1{,}0;\; 5{,}0;\; 10{,}0;\; 15{,}0;\; 25{,}0;\; 35{,}0;\; 50{,}0\}
+\eta \in \{0.0;\; 1.0;\; 5.0;\; 10.0;\; 15.0;\; 25.0;\; 35.0;\; 50.0\}.
 \]
 
 Quando o Prejudice Remover não converge ou os dados não permitem seu uso adequado (por exemplo, ausência de representação de algum grupo), uma Regressão Logística convencional é utilizada como \textit{fallback}, aplicada apenas sobre as features não sensíveis.
 
-\subsection{Experimento 2 — Conjuntos de Features}
+\subsection{Experimento 2 -- Conjuntos de Features}
 
-Este experimento avalia como a composição do conjunto de features afeta a equidade do modelo, fixando um classificador base (Regressão Logística) e variando apenas as features utilizadas. São testados quatro conjuntos organizados em níveis crescentes de informação:
+Este experimento avalia como a composição do conjunto de features afeta a equidade do modelo, fixando um classificador base (Regressão Logística) e variando apenas as features utilizadas. São testados quatro conjuntos organizados em níveis crescentes de informação: \textbf{transacional\_2} (duas features de contexto individual do titular: \texttt{pct\_saldo\_gasto} e \texttt{zscore\_valor\_no\_titular}); \textbf{tipo\_temporal\_4}, que acrescenta contexto temporal e tipo de lançamento (\texttt{final\_de\_semana} e \texttt{is\_cnab220}); \textbf{comportamental\_6}, que adiciona padrões de comportamento acumulado do titular (\texttt{n\_transacoes\_dia\_tit} e \texttt{prop\_cnab220\_tit}); e \textbf{completo\_10}, o conjunto completo incluindo as quatro features de z-score por ramo. A hipótese central é que o nível de informação presente nas features influencia diretamente a equidade do modelo: features que capturam comportamento relativo ao grupo sensível tendem a introduzir mais viés, enquanto features que medem desvios individuais em relação ao próprio grupo (z-scores por ramo) tendem a ser mais equitativas.
 
-\begin{itemize}
-    \item \textbf{transacional\_2}: duas features de contexto individual do titular (\texttt{pct\_saldo\_gasto}, \texttt{zscore\_valor\_no\_titular});
-    \item \textbf{tipo\_temporal\_4}: acrescenta contexto temporal e tipo de lançamento (\texttt{final\_de\_semana}, \texttt{is\_cnab220});
-    \item \textbf{comportamental\_6}: adiciona padrões de comportamento acumulado do titular (\texttt{n\_transacoes\_dia\_tit}, \texttt{prop\_cnab220\_tit});
-    \item \textbf{completo\_10}: conjunto completo, incluindo as quatro features de z-score por ramo.
-\end{itemize}
+\subsection{Experimento 3 -- Métodos de Mitigação}
 
-A hipótese central é que o nível de informação presente nas features influencia diretamente a equidade do modelo: features que capturam comportamento relativo ao grupo sensível tendem a introduzir mais viés, enquanto features que medem desvios individuais em relação ao próprio grupo (z-scores por ramo) tendem a ser mais equitativas.
-
-\subsection{Experimento 3 — Métodos de Mitigação}
-
-Este experimento compara quatro abordagens de mitigação de viés aplicadas com o mesmo conjunto de features (excluindo \texttt{is\_cnab220}, cuja presença tornaria o problema trivialmente separável):
-
-\begin{itemize}
-    \item \textbf{LR sem mitigação}: Regressão Logística treinada sobre a amostra bruta desbalanceada, servindo como linha de base;
-    \item \textbf{LR balanceado}: Regressão Logística com balanceamento de classes por subamostragem (\textit{undersampling});
-    \item \textbf{LR reponderado}: Regressão Logística com pesos de Kamiran \& Calders \cite{kamiran2012data}, que ajustam a importância de cada amostra com base na combinação do grupo sensível e da classe alvo;
-    \item \textbf{Prejudice Remover ($\eta = 10$)}: técnica \textit{in-processing}, com o valor de $\eta$ identificado no Experimento 1 como o melhor equilíbrio entre equidade e desempenho.
-\end{itemize}
+Este experimento compara quatro abordagens de mitigação de viés aplicadas com o mesmo conjunto de features (excluindo \texttt{is\_cnab220}, cuja presença tornaria a detecção artificialmente fácil): \textbf{LR sem mitigação}, Regressão Logística treinada sobre a amostra bruta desbalanceada, servindo como linha de base; \textbf{LR balanceado}, Regressão Logística com balanceamento de classes por subamostragem; \textbf{LR reponderado}, Regressão Logística com pesos de Kamiran e Calders~\cite{kamiran2012data}, que ajustam a importância de cada amostra com base na combinação do grupo sensível e da classe alvo; e \textbf{Prejudice Remover ($\eta = 10$)}, técnica \textit{in-processing} com o valor de $\eta$ identificado no Experimento~1 como o melhor equilíbrio entre equidade e desempenho.

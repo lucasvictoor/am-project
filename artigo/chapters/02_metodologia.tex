@@ -1,4 +1,3 @@
-% chapters/02_metodologia.tex
 \section{Metodologia}
 \label{sec:metodologia}
 
@@ -6,45 +5,17 @@ Nesta seção descrevemos as bases de dados utilizadas, as etapas de pré-proces
 
 \subsection{Bases de Dados}
 
-Trabalhamos com dez bases de dados de transações financeiras, cedidas no âmbito deste projeto como dados públicos. Elas estão organizadas em duas séries:
+Trabalhamos com dez bases de dados de transações financeiras, disponibilizadas para este projeto como dados públicos. Elas estão organizadas em duas séries: a série PD, composta pelas bases \texttt{pd\_v0}, \texttt{pd\_v0.25}, \texttt{pd\_v0.5}, \texttt{pd\_v0.75} e \texttt{pd\_v1}; e a série GS, composta por \texttt{gs\_v0}, \texttt{gs\_v0.25}, \texttt{gs\_v0.5}, \texttt{gs\_v0.75} e \texttt{gs\_v1}. O sufixo numérico de cada base indica seu \textbf{nível de viés controlado} ($v \in \{0.0;\; 0.25;\; 0.5;\; 0.75;\; 1.0\}$), onde $v = 0$ representa a ausência de viés introduzido e $v = 1$ corresponde ao nível máximo. Essa estrutura permite estudar sistematicamente como o grau de viés presente nos dados de treinamento e de teste afeta a equidade dos modelos.
 
-\begin{itemize}
-    \item \textbf{Série PD}: bases \texttt{pd\_v0}, \texttt{pd\_v0.25}, \texttt{pd\_v0.5}, \texttt{pd\_v0.75} e \texttt{pd\_v1}.
-    \item \textbf{Série GS}: bases \texttt{gs\_v0}, \texttt{gs\_v0.25}, \texttt{gs\_v0.5}, \texttt{gs\_v0.75} e \texttt{gs\_v1}.
-\end{itemize}
-
-O sufixo numérico de cada base indica seu \textbf{nível de viés controlado} ($v \in \{0{,}0;\; 0{,}25;\; 0{,}5;\; 0{,}75;\; 1{,}0\}$), onde $v = 0$ representa a ausência de viés introduzido e $v = 1$ corresponde ao nível máximo. Essa estrutura permite estudar sistematicamente como o grau de viés presente nos dados de treinamento e de teste afeta a equidade dos modelos.
-
-O \textbf{atributo sensível} considerado é o ramo de atividade do estabelecimento comercial (\texttt{RAMO\_ATIVIDADE\_1}). Para manter a análise binária, filtramos apenas dois grupos: o \textbf{grupo privilegiado} (código 1) e o \textbf{grupo desprivilegiado} (código 4, recodificado para 0). A \textbf{variável alvo} é \texttt{I-d}, onde o valor 1 indica suspeita de fraude e o valor 0 indica transação legítima --- sendo este último o resultado considerado favorável nas métricas de equidade.
+O \textbf{atributo sensível} considerado é o ramo de atividade (\texttt{RAMO\_ATIVIDADE\_1}). Para manter a análise binária, filtramos apenas dois grupos: o \textbf{grupo privilegiado} (código~1) e o \textbf{grupo desprivilegiado} (código~4, recodificado para~0). A \textbf{variável alvo} é \texttt{I-d}, onde o valor~1 indica suspeita de fraude e o valor~0 indica transação legítima, sendo este último o resultado considerado favorável nas métricas de equidade.
 
 \subsection{Pré-processamento e Engenharia de Features}
 
-Os dados são ordenados cronologicamente por titular antes de qualquer transformação, evitando vazamento de informação futura (\textit{data leakage}). A partir dos registros brutos, construímos dez features divididas em três grupos:
+Os dados são ordenados cronologicamente por titular antes de qualquer transformação, evitando vazamento de informação futura (\textit{data leakage}). A partir dos registros brutos, construímos dez features divididas em três grupos. O primeiro grupo contém uma \textbf{feature binária temporal}: \texttt{final\_de\_semana}, que indica se a transação ocorreu em sábado ou domingo, capturando um padrão comportamental distinto dos dias úteis. O segundo grupo reúne \textbf{features de comportamento do titular}, calculadas com \textit{expanding windows} para evitar leakage: \texttt{pct\_saldo\_gasto} (proporção do valor da transação em relação ao saldo disponível), \texttt{zscore\_valor\_no\_titular} (z-score do valor em relação ao histórico acumulado do titular), \texttt{n\_transacoes\_dia\_tit} (volume acumulado de transações do titular no mesmo dia), \texttt{is\_cnab220} (indicador de transações do tipo crédito) e \texttt{prop\_cnab220\_tit} (proporção histórica de uso de crédito pelo titular, calculada com \textit{shift} de um período).
 
-\begin{itemize}
-    \item \textbf{Feature binária temporal:} \texttt{final\_de\_semana} indica se a transação ocorreu em sábado ou domingo, capturando um padrão comportamental distinto dos dias úteis.
+O terceiro grupo contém \textbf{features de z-score por ramo de atividade}, que neutralizam o efeito do grupo sensível ao medir anomalia relativa ao comportamento típico de cada ramo: \texttt{zscore\_valor\_no\_ramo}, \texttt{zscore\_n\_trans\_mes\_no\_ramo}, \texttt{zscore\_reg\_no\_ramo} e \texttt{zscore\_valor\_total\_mes\_no\_ramo}. Ao medir o comportamento do titular em relação à média do seu próprio grupo, essas features reduzem a dependência do modelo em relação ao ramo como proxy discriminatório.
 
-    \item \textbf{Features de comportamento do titular} (calculadas com \textit{expanding windows} para evitar leakage):
-    \begin{itemize}
-        \item \texttt{pct\_saldo\_gasto}: proporção do valor da transação em relação ao saldo disponível;
-        \item \texttt{zscore\_valor\_no\_titular}: z-score do valor da transação em relação ao histórico acumulado do próprio titular, sinalizando anomalias individuais;
-        \item \texttt{n\_transacoes\_dia\_tit}: volume acumulado de transações do titular no mesmo dia;
-        \item \texttt{is\_cnab220}: indicador binário de transações do tipo crédito (CNAB = 220);
-        \item \texttt{prop\_cnab220\_tit}: proporção histórica de uso de crédito pelo titular, calculada sem vazamento (\textit{shift} de um período).
-    \end{itemize}
-
-    \item \textbf{Features de z-score por ramo de atividade} (neutralizam o efeito do grupo sensível ao medir anomalia relativa ao comportamento típico de cada ramo):
-    \begin{itemize}
-        \item \texttt{zscore\_valor\_no\_ramo}: anomalia do valor da transação dentro do ramo;
-        \item \texttt{zscore\_n\_trans\_mes\_no\_ramo}: anomalia do volume mensal de transações dentro do ramo;
-        \item \texttt{zscore\_reg\_no\_ramo}: anomalia da regularidade de uso do titular em relação ao seu ramo;
-        \item \texttt{zscore\_valor\_total\_mes\_no\_ramo}: anomalia do volume financeiro mensal dentro do ramo.
-    \end{itemize}
-\end{itemize}
-
-As features de z-score por ramo são particularmente relevantes para o problema de equidade: ao medir o comportamento do titular em relação à média do seu próprio grupo, elas reduzem a dependência do modelo em relação ao ramo de atividade como proxy discriminatório.
-
-Antes do treinamento, apenas as features contínuas recebem padronização via \textit{StandardScaler}. As features binárias (\texttt{final\_de\_semana}, \texttt{is\_cnab220}) são mantidas em sua escala original. Valores ausentes são substituídos por zero.
+Antes do treinamento, apenas as features contínuas recebem padronização via \textit{StandardScaler}. As features binárias (\texttt{final\_de\_semana} e \texttt{is\_cnab220}) são mantidas em sua escala original. Valores ausentes são substituídos por zero.
 
 \subsection{Protocolo de Avaliação}
 
@@ -58,26 +29,14 @@ Adotamos um esquema de \textbf{avaliação cruzada entre bases}: cada base serve
 
 \subsubsection{Métricas de avaliação}
 
-Os modelos são avaliados sob duas perspectivas. Do ponto de vista de \textbf{desempenho preditivo}:
+Os modelos são avaliados sob duas perspectivas. Do ponto de vista do \textbf{desempenho preditivo}, utilizamos o F1-Score (média harmônica entre precisão e revocação, indicada para dados desbalanceados), a Precisão (proporção de alertas de fraude que eram de fato fraudes) e a Revocação (proporção de fraudes reais corretamente identificadas). Do ponto de vista da \textbf{equidade}, considerando a aprovação da transação (classe~0) como o resultado favorável, utilizamos duas métricas. A \textbf{SPD} (\textit{Statistical Parity Difference}) representa a diferença entre a taxa de aprovação do grupo privilegiado ($S=1$) e do grupo desprivilegiado ($S=0$), com valores próximos de zero indicando maior equidade:
+\[
+\text{SPD} = P(\hat{Y} = 0 \mid S = 1) - P(\hat{Y} = 0 \mid S = 0).
+\]
 
-\begin{itemize}
-    \item \textbf{F1-Score}: média harmônica entre precisão e revocação, indicada para dados desbalanceados;
-    \item \textbf{Precisão}: proporção de alertas de fraude que eram, de fato, fraudes;
-    \item \textbf{Revocação}: proporção de fraudes reais corretamente identificadas.
-\end{itemize}
-
-Do ponto de vista de \textbf{equidade}, considerando a aprovação da transação (classe~0) como o resultado favorável:
-
-\begin{itemize}
-    \item \textbf{SPD} (\textit{Statistical Parity Difference}): diferença entre a taxa de aprovação do grupo privilegiado ($S=1$) e do grupo desprivilegiado ($S=0$). Valores próximos de zero indicam maior equidade:
-    \[
-    \text{SPD} = P(\hat{Y} = 0 \mid S = 1) - P(\hat{Y} = 0 \mid S = 0)
-    \]
-
-    \item \textbf{DI} (\textit{Disparate Impact}): razão entre as taxas de aprovação dos dois grupos. O critério dos ``quatro quintos'' considera valores abaixo de 0,8 como indicativos de discriminação sistemática:
-    \[
-    \text{DI} = \frac{P(\hat{Y} = 0 \mid S = 0)}{P(\hat{Y} = 0 \mid S = 1)}
-    \]
-\end{itemize}
+O \textbf{DI} (\textit{Disparate Impact}) representa a razão entre as taxas de aprovação dos dois grupos, sendo que o critério dos ``quatro quintos'' considera valores abaixo de 0.8 como indicativos de discriminação sistemática:
+\[
+\text{DI} = \frac{P(\hat{Y} = 0 \mid S = 0)}{P(\hat{Y} = 0 \mid S = 1)}.
+\]
 
 Todos os experimentos utilizam semente aleatória fixa (\texttt{SEED = 42}) e são paralelizados com a biblioteca \texttt{joblib} para garantir reprodutibilidade e eficiência computacional.
